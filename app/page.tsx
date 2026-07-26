@@ -1,8 +1,8 @@
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-      Ghost AI
-    </div>
-  );
+export default async function Home() {
+  const { isAuthenticated } = await auth();
+
+  redirect(isAuthenticated ? "/editor" : "/sign-in");
 }
