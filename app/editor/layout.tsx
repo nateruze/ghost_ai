@@ -1,35 +1,24 @@
-"use client"
+import { auth, currentUser } from "@clerk/nextjs/server"
 
-import { useState } from "react"
+import { EditorShell } from "@/components/editor/editor-shell"
+import { getOwnedProjects, getSharedProjects } from "@/lib/projects"
 
-import { EditorNavbar } from "@/components/editor/editor-navbar"
-import { ProjectSidebar } from "@/components/editor/project-sidebar"
-import { ProjectDialogs } from "@/components/editor/project-dialogs"
-import { ProjectDialogsProvider } from "@/hooks/use-project-dialogs"
-
-export default function EditorLayout({
+export default async function EditorLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const { userId } = await auth()
+  const user = await currentUser()
+
+  const [ownedProjects, sharedProjects] = await Promise.all([
+    getOwnedProjects(userId!),
+    getSharedProjects(user?.primaryEmailAddress?.emailAddress),
+  ])
 
   return (
-    <ProjectDialogsProvider>
-      <div className="flex h-screen flex-col overflow-hidden bg-base">
-        <EditorNavbar
-          isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
-        />
-        <div className="relative flex-1 overflow-hidden">
-          <ProjectSidebar
-            isOpen={isSidebarOpen}
-            onClose={() => setIsSidebarOpen(false)}
-          />
-          <main className="h-full overflow-auto">{children}</main>
-        </div>
-      </div>
-      <ProjectDialogs />
-    </ProjectDialogsProvider>
+    <EditorShell ownedProjects={ownedProjects} sharedProjects={sharedProjects}>
+      {children}
+    </EditorShell>
   )
 }

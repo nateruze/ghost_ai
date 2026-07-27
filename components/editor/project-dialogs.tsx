@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useProjectDialogs } from "@/hooks/use-project-dialogs"
+import { useProjectActions } from "@/hooks/use-project-actions"
 
 export function ProjectDialogs() {
   return (
@@ -25,8 +25,16 @@ export function ProjectDialogs() {
 }
 
 function CreateProjectDialog() {
-  const { dialogType, name, slug, isLoading, setName, closeDialog, submitCreate } =
-    useProjectDialogs()
+  const {
+    dialogType,
+    name,
+    slug,
+    isLoading,
+    error,
+    setName,
+    closeDialog,
+    submitCreate,
+  } = useProjectActions()
   const open = dialogType === "create"
 
   return (
@@ -63,8 +71,9 @@ function CreateProjectDialog() {
               autoFocus
             />
             <p className="text-xs text-copy-muted">
-              {slug ? `/${slug}` : "Enter a name to preview the slug"}
+              {slug ? `Room ID: ${slug}` : "Enter a name to preview the room ID"}
             </p>
+            {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
 
           <DialogFooter>
@@ -92,10 +101,11 @@ function RenameProjectDialog() {
     activeProject,
     name,
     isLoading,
+    error,
     setName,
     closeDialog,
     submitRename,
-  } = useProjectDialogs()
+  } = useProjectActions()
   const open = dialogType === "rename"
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -138,6 +148,7 @@ function RenameProjectDialog() {
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
+            {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
 
           <DialogFooter>
@@ -160,8 +171,14 @@ function RenameProjectDialog() {
 }
 
 function DeleteProjectDialog() {
-  const { dialogType, activeProject, isLoading, closeDialog, submitDelete } =
-    useProjectDialogs()
+  const {
+    dialogType,
+    activeProject,
+    isLoading,
+    error,
+    closeDialog,
+    submitDelete,
+  } = useProjectActions()
   const open = dialogType === "delete"
 
   return (
@@ -179,6 +196,8 @@ function DeleteProjectDialog() {
             &rdquo;? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
+
+        {error && <p className="text-xs text-destructive">{error}</p>}
 
         <DialogFooter>
           <Button variant="outline" onClick={closeDialog} disabled={isLoading}>

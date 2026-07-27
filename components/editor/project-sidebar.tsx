@@ -5,22 +5,24 @@ import { Pencil, Plus, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import { useProjectDialogs } from "@/hooks/use-project-dialogs"
-import type { Project } from "@/lib/mock-projects"
+import { useProjectActions } from "@/hooks/use-project-actions"
+import type { ProjectSummary } from "@/lib/projects"
 
 interface ProjectSidebarProps {
   isOpen: boolean
   onClose: () => void
+  ownedProjects: ProjectSummary[]
+  sharedProjects: ProjectSummary[]
 }
 
-export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
-  const { projects, openCreateDialog, openRenameDialog, openDeleteDialog } =
-    useProjectDialogs()
-
-  const myProjects = projects.filter((project) => project.owner === "me")
-  const sharedProjects = projects.filter(
-    (project) => project.owner === "collaborator"
-  )
+export function ProjectSidebar({
+  isOpen,
+  onClose,
+  ownedProjects,
+  sharedProjects,
+}: ProjectSidebarProps) {
+  const { openCreateDialog, openRenameDialog, openDeleteDialog } =
+    useProjectActions()
 
   return (
     <>
@@ -76,16 +78,17 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
             value="my-projects"
             className="min-h-0 flex-1 overflow-y-auto px-3 py-2"
           >
-            {myProjects.length === 0 ? (
+            {ownedProjects.length === 0 ? (
               <div className="flex h-full items-center justify-center text-center text-sm text-copy-muted">
                 No projects yet
               </div>
             ) : (
               <ul className="flex flex-col gap-0.5">
-                {myProjects.map((project) => (
+                {ownedProjects.map((project) => (
                   <ProjectItem
                     key={project.id}
                     project={project}
+                    canManage
                     onRename={() => openRenameDialog(project)}
                     onDelete={() => openDeleteDialog(project)}
                   />
@@ -124,15 +127,15 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
 
 function ProjectItem({
   project,
+  canManage,
   onRename,
   onDelete,
 }: {
-  project: Project
+  project: ProjectSummary
+  canManage?: boolean
   onRename?: () => void
   onDelete?: () => void
 }) {
-  const canManage = project.owner === "me"
-
   return (
     <li className="group flex items-center justify-between gap-1 rounded-md px-2 py-1.5 text-sm text-copy-primary hover:bg-accent-dim">
       <span className="truncate">{project.name}</span>
