@@ -1,9 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python3 -c ' *)",
-      "Read(//Users/nashiafairuz/Library/Application Support/Code/User/workspaceStorage/ee0c78e5c77911c9ed057a5c7da1e530/coderabbit.coderabbit-vscode/**)",
-      "Read(//Users/nashiafairuz/Library/Application Support/CodeRabbit/**)"
+      "Read(/Users/nashiafairuz/Documents/coding_projects/ghost_ai/**)"
     ]
   }
 }

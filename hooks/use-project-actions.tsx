@@ -39,7 +39,7 @@ export function ProjectActionsProvider({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const params = useParams<{ projectId?: string }>()
+  const params = useParams<{ roomId?: string }>()
 
   const [dialogType, setDialogType] = useState<DialogType>(null)
   const [activeProject, setActiveProject] = useState<ProjectSummary | null>(
@@ -136,7 +136,7 @@ export function ProjectActionsProvider({
       })
       if (!response.ok) throw new Error("Failed to delete project")
 
-      const wasActiveWorkspace = params?.projectId === activeProject.id
+      const wasActiveWorkspace = params?.roomId === activeProject.id
       closeDialog()
 
       if (wasActiveWorkspace) {
