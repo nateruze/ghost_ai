@@ -25,11 +25,12 @@ export async function PATCH(
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const body = await request.json().catch(() => ({}));
-  const name =
-    typeof body?.name === "string" && body.name.trim().length > 0
-      ? body.name
-      : "Untitled Project";
+  const body = await request.json().catch(() => null);
+  const name = typeof body?.name === "string" ? body.name.trim() : "";
+
+  if (!name) {
+    return Response.json({ error: "Project name is required" }, { status: 400 });
+  }
 
   const updated = await prisma.project.update({
     where: { id: projectId },
