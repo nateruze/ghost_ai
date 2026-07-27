@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Pencil, Plus, Trash2, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -13,6 +14,7 @@ interface ProjectSidebarProps {
   onClose: () => void
   ownedProjects: ProjectSummary[]
   sharedProjects: ProjectSummary[]
+  activeProjectId?: string
 }
 
 export function ProjectSidebar({
@@ -20,6 +22,7 @@ export function ProjectSidebar({
   onClose,
   ownedProjects,
   sharedProjects,
+  activeProjectId,
 }: ProjectSidebarProps) {
   const { openCreateDialog, openRenameDialog, openDeleteDialog } =
     useProjectActions()
@@ -89,6 +92,7 @@ export function ProjectSidebar({
                     key={project.id}
                     project={project}
                     canManage
+                    isActive={project.id === activeProjectId}
                     onRename={() => openRenameDialog(project)}
                     onDelete={() => openDeleteDialog(project)}
                   />
@@ -107,7 +111,11 @@ export function ProjectSidebar({
             ) : (
               <ul className="flex flex-col gap-0.5">
                 {sharedProjects.map((project) => (
-                  <ProjectItem key={project.id} project={project} />
+                  <ProjectItem
+                    key={project.id}
+                    project={project}
+                    isActive={project.id === activeProjectId}
+                  />
                 ))}
               </ul>
             )}
@@ -128,19 +136,31 @@ export function ProjectSidebar({
 function ProjectItem({
   project,
   canManage,
+  isActive,
   onRename,
   onDelete,
 }: {
   project: ProjectSummary
   canManage?: boolean
+  isActive?: boolean
   onRename?: () => void
   onDelete?: () => void
 }) {
   return (
-    <li className="group flex items-center justify-between gap-1 rounded-md px-2 py-1.5 text-sm text-copy-primary hover:bg-accent-dim">
-      <span className="truncate">{project.name}</span>
+    <li
+      className={cn(
+        "group flex items-center justify-between gap-1 rounded-md text-sm text-copy-primary hover:bg-accent-dim",
+        isActive && "bg-accent-dim"
+      )}
+    >
+      <Link
+        href={`/editor/${project.id}`}
+        className="min-w-0 flex-1 truncate px-2 py-1.5"
+      >
+        {project.name}
+      </Link>
       {canManage && (
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+        <div className="flex shrink-0 items-center gap-0.5 pr-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
           <Button
             variant="ghost"
             size="icon-xs"
