@@ -4,6 +4,8 @@ import { useState } from "react"
 
 import { EditorNavbar } from "@/components/editor/editor-navbar"
 import { ProjectSidebar } from "@/components/editor/project-sidebar"
+import { ProjectDialogs } from "@/components/editor/project-dialogs"
+import { ProjectDialogsProvider } from "@/hooks/use-project-dialogs"
 
 export default function EditorLayout({
   children,
@@ -13,18 +15,21 @@ export default function EditorLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-base">
-      <EditorNavbar
-        isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
-      />
-      <div className="relative flex-1 overflow-hidden">
-        <ProjectSidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
+    <ProjectDialogsProvider>
+      <div className="flex h-screen flex-col overflow-hidden bg-base">
+        <EditorNavbar
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
         />
-        <main className="h-full overflow-auto">{children}</main>
+        <div className="relative flex-1 overflow-hidden">
+          <ProjectSidebar
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+          />
+          <main className="h-full overflow-auto">{children}</main>
+        </div>
       </div>
-    </div>
+      <ProjectDialogs />
+    </ProjectDialogsProvider>
   )
 }
