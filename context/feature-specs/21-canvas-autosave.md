@@ -24,7 +24,7 @@ Add autosave and loading for the collaborative canvas so project state is persis
    - fetch the saved canvas JSON from Vercel Blob
    - return the canvas state to the editor
 
-3. Add an autosave hook in the `/hook` folder.
+3. Add an autosave hook in the `hooks/` folder.
    - watch the canvas nodes and edges
    - debounce saves to avoid excessive writes
    - save through the canvas API route
@@ -35,7 +35,7 @@ Add autosave and loading for the collaborative canvas so project state is persis
    - if the room is empty and the project has a saved canvas blob URL, fetch and load the saved canvas state
    - if the room already has nodes or edges, skip the load entirely to avoid overwriting active collaboration
 
-5. Add a small save status indicator in the editor Save button.
+5. Add a small save status indicator as a standalone navbar status pill (there is no manual editor Save button to attach it to).
    - show saving, saved, or error states
 
 ## Storage Pattern

@@ -27,11 +27,18 @@ export async function PUT(
   }
 
   const body = await request.json().catch(() => null)
-  if (!body || typeof body !== "object") {
+  if (
+    !body ||
+    typeof body !== "object" ||
+    !Array.isArray(body.nodes) ||
+    !Array.isArray(body.edges)
+  ) {
     return Response.json({ error: "Invalid canvas payload" }, { status: 400 })
   }
 
-  const blob = await put(`canvas/${projectId}.json`, JSON.stringify(body), {
+  const canvasState = { nodes: body.nodes, edges: body.edges }
+
+  const blob = await put(`canvas/${projectId}.json`, JSON.stringify(canvasState), {
     access: "private",
     contentType: "application/json",
     addRandomSuffix: false,

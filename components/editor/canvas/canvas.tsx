@@ -13,7 +13,14 @@ import {
   useReactFlow,
 } from "@xyflow/react"
 import { useLiveblocksFlow } from "@liveblocks/react-flow"
-import { useCanRedo, useCanUndo, useRedo, useUndo, useUpdateMyPresence } from "@liveblocks/react"
+import {
+  useCanRedo,
+  useCanUndo,
+  useRedo,
+  useRoom,
+  useUndo,
+  useUpdateMyPresence,
+} from "@liveblocks/react"
 
 import { CanvasControls } from "@/components/editor/canvas/canvas-controls"
 import { CanvasEdgeRenderer } from "@/components/editor/canvas/canvas-edge"
@@ -65,6 +72,7 @@ const CanvasInner = forwardRef<CanvasHandle, CanvasProps>(function CanvasInner(
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = reactFlowInstance
   const nodeCounterRef = useRef(0)
   const updateMyPresence = useUpdateMyPresence()
+  const room = useRoom()
 
   const saveStatus = useCanvasAutosave({ projectId, nodes, edges })
   useEffect(() => {
@@ -214,43 +222,45 @@ const CanvasInner = forwardRef<CanvasHandle, CanvasProps>(function CanvasInner(
 
   const importTemplate = useCallback(
     (template: CanvasTemplate) => {
-      const currentNodes = reactFlowInstance.getNodes()
-      const currentEdges = reactFlowInstance.getEdges()
+      room.batch(() => {
+        const currentNodes = reactFlowInstance.getNodes()
+        const currentEdges = reactFlowInstance.getEdges()
 
-      if (currentNodes.length > 0) {
-        onNodesChange(currentNodes.map((existing) => ({ type: "remove", id: existing.id })))
-      }
-      if (currentEdges.length > 0) {
-        onEdgesChange(currentEdges.map((existing) => ({ type: "remove", id: existing.id })))
-      }
+        if (currentNodes.length > 0) {
+          onNodesChange(currentNodes.map((existing) => ({ type: "remove", id: existing.id })))
+        }
+        if (currentEdges.length > 0) {
+          onEdgesChange(currentEdges.map((existing) => ({ type: "remove", id: existing.id })))
+        }
 
-      const newNodes: CanvasNode[] = template.nodes.map((templateNode) => ({
-        id: templateNode.id,
-        type: "canvasNode",
-        position: templateNode.position,
-        width: templateNode.width,
-        height: templateNode.height,
-        data: {
-          label: templateNode.label,
-          color: templateNode.color,
-          textColor: templateNode.textColor,
-          shape: templateNode.shape,
-        },
-      }))
-      const newEdges: CanvasEdge[] = template.edges.map((templateEdge) => ({
-        id: templateEdge.id,
-        type: "canvasEdge",
-        source: templateEdge.source,
-        target: templateEdge.target,
-        data: templateEdge.label ? { label: templateEdge.label } : {},
-      }))
+        const newNodes: CanvasNode[] = template.nodes.map((templateNode) => ({
+          id: templateNode.id,
+          type: "canvasNode",
+          position: templateNode.position,
+          width: templateNode.width,
+          height: templateNode.height,
+          data: {
+            label: templateNode.label,
+            color: templateNode.color,
+            textColor: templateNode.textColor,
+            shape: templateNode.shape,
+          },
+        }))
+        const newEdges: CanvasEdge[] = template.edges.map((templateEdge) => ({
+          id: templateEdge.id,
+          type: "canvasEdge",
+          source: templateEdge.source,
+          target: templateEdge.target,
+          data: templateEdge.label ? { label: templateEdge.label } : {},
+        }))
 
-      onNodesChange(newNodes.map((item) => ({ type: "add", item })))
-      onEdgesChange(newEdges.map((item) => ({ type: "add", item })))
+        onNodesChange(newNodes.map((item) => ({ type: "add", item })))
+        onEdgesChange(newEdges.map((item) => ({ type: "add", item })))
+      })
 
       window.requestAnimationFrame(() => fitView({ duration: 200 }))
     },
-    [reactFlowInstance, onNodesChange, onEdgesChange, fitView]
+    [room, reactFlowInstance, onNodesChange, onEdgesChange, fitView]
   )
 
   useImperativeHandle(ref, () => ({ importTemplate }), [importTemplate])
