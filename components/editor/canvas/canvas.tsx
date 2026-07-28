@@ -32,7 +32,7 @@ function CanvasInner() {
       nodes: { initial: [] },
       edges: { initial: [] },
     })
-  const { screenToFlowPosition, setNodes } = useReactFlow<CanvasNode, CanvasEdge>()
+  const { screenToFlowPosition } = useReactFlow<CanvasNode, CanvasEdge>()
   const nodeCounterRef = useRef(0)
 
   const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
@@ -40,20 +40,9 @@ function CanvasInner() {
     event.dataTransfer.dropEffect = "move"
   }, [])
 
-  const onDrop = useCallback(
-    (event: DragEvent<HTMLDivElement>) => {
-      event.preventDefault()
-
-      const raw = event.dataTransfer.getData(CANVAS_SHAPE_DRAG_TYPE)
-      if (!raw) return
-
-      const { shape, width, height } = JSON.parse(raw) as CanvasShapeDragPayload
-
-      const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      })
-
+  const addNode = useCallback(
+    (payload: CanvasShapeDragPayload, position: { x: number; y: number }) => {
+      const { shape, width, height } = payload
       const id = `${shape}-${Date.now()}-${nodeCounterRef.current++}`
 
       const newNode: CanvasNode = {
@@ -65,9 +54,39 @@ function CanvasInner() {
         data: { label: "", color: DEFAULT_NODE_COLOR, shape },
       }
 
-      setNodes((currentNodes) => [...currentNodes, newNode])
+      onNodesChange([{ type: "add", item: newNode }])
     },
-    [screenToFlowPosition, setNodes]
+    [onNodesChange]
+  )
+
+  const onDrop = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault()
+
+      const raw = event.dataTransfer.getData(CANVAS_SHAPE_DRAG_TYPE)
+      if (!raw) return
+
+      const payload = JSON.parse(raw) as CanvasShapeDragPayload
+
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      })
+
+      addNode(payload, position)
+    },
+    [addNode, screenToFlowPosition]
+  )
+
+  const onCreateShape = useCallback(
+    (payload: CanvasShapeDragPayload) => {
+      const position = screenToFlowPosition({
+        x: window.innerWidth / 2,
+        y: window.innerHeight / 2,
+      })
+      addNode(payload, position)
+    },
+    [addNode, screenToFlowPosition]
   )
 
   return (
@@ -87,7 +106,7 @@ function CanvasInner() {
         <MiniMap />
         <Background variant={BackgroundVariant.Dots} />
       </ReactFlow>
-      <ShapePanel />
+      <ShapePanel onCreateShape={onCreateShape} />
     </div>
   )
 }

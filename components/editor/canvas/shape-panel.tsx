@@ -37,12 +37,21 @@ const SHAPE_LABELS: Record<CanvasShape, string> = {
 
 const SHAPES = Object.keys(SHAPE_DEFAULT_SIZES) as CanvasShape[]
 
-export function ShapePanel() {
+interface ShapePanelProps {
+  onCreateShape: (payload: CanvasShapeDragPayload) => void
+}
+
+export function ShapePanel({ onCreateShape }: ShapePanelProps) {
   function handleDragStart(event: DragEvent<HTMLButtonElement>, shape: CanvasShape) {
     const { width, height } = SHAPE_DEFAULT_SIZES[shape]
     const payload: CanvasShapeDragPayload = { shape, width, height }
     event.dataTransfer.setData(CANVAS_SHAPE_DRAG_TYPE, JSON.stringify(payload))
     event.dataTransfer.effectAllowed = "move"
+  }
+
+  function handleClick(shape: CanvasShape) {
+    const { width, height } = SHAPE_DEFAULT_SIZES[shape]
+    onCreateShape({ shape, width, height })
   }
 
   return (
@@ -56,6 +65,7 @@ export function ShapePanel() {
               type="button"
               draggable
               onDragStart={(event) => handleDragStart(event, shape)}
+              onClick={() => handleClick(shape)}
               aria-label={SHAPE_LABELS[shape]}
               title={SHAPE_LABELS[shape]}
               className="flex size-9 cursor-grab items-center justify-center rounded-full text-copy-muted transition-colors hover:bg-elevated hover:text-copy-primary active:cursor-grabbing"
