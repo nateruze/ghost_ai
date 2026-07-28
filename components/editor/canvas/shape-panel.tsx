@@ -37,16 +37,28 @@ const SHAPE_LABELS: Record<CanvasShape, string> = {
 
 const SHAPES = Object.keys(SHAPE_DEFAULT_SIZES) as CanvasShape[]
 
-interface ShapePanelProps {
-  onCreateShape: (payload: CanvasShapeDragPayload) => void
+const EMPTY_DRAG_IMAGE = typeof Image !== "undefined" ? new Image() : undefined
+if (EMPTY_DRAG_IMAGE) {
+  EMPTY_DRAG_IMAGE.src =
+    "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7"
 }
 
-export function ShapePanel({ onCreateShape }: ShapePanelProps) {
+interface ShapePanelProps {
+  onCreateShape: (payload: CanvasShapeDragPayload) => void
+  onDragStart: (payload: CanvasShapeDragPayload, x: number, y: number) => void
+  onDragEnd: () => void
+}
+
+export function ShapePanel({ onCreateShape, onDragStart, onDragEnd }: ShapePanelProps) {
   function handleDragStart(event: DragEvent<HTMLButtonElement>, shape: CanvasShape) {
     const { width, height } = SHAPE_DEFAULT_SIZES[shape]
     const payload: CanvasShapeDragPayload = { shape, width, height }
     event.dataTransfer.setData(CANVAS_SHAPE_DRAG_TYPE, JSON.stringify(payload))
     event.dataTransfer.effectAllowed = "move"
+    if (EMPTY_DRAG_IMAGE) {
+      event.dataTransfer.setDragImage(EMPTY_DRAG_IMAGE, 0, 0)
+    }
+    onDragStart(payload, event.clientX, event.clientY)
   }
 
   function handleClick(shape: CanvasShape) {
@@ -65,6 +77,7 @@ export function ShapePanel({ onCreateShape }: ShapePanelProps) {
               type="button"
               draggable
               onDragStart={(event) => handleDragStart(event, shape)}
+              onDragEnd={onDragEnd}
               onClick={() => handleClick(shape)}
               aria-label={SHAPE_LABELS[shape]}
               title={SHAPE_LABELS[shape]}
