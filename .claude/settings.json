@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Read(/Users/nashiafairuz/Documents/coding_projects/ghost_ai/**)"
+      "Read(/Users/nashiafairuz/Documents/coding_projects/ghost_ai/**)",
+      "Bash(npx -y clerk@latest api /users/user_3H4ZPkKtrnRsgRjOHlEanQPFm0Y)",
+      "Bash(curl -s -X DELETE http://localhost:3000/api/nonexistent)"
     ]
   }
 }
