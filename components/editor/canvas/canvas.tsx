@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import type { DragEvent } from "react"
 import {
   Background,
@@ -13,14 +13,25 @@ import {
   useReactFlow,
 } from "@xyflow/react"
 import { useLiveblocksFlow } from "@liveblocks/react-flow"
-import { useCanRedo, useCanUndo, useRedo, useUndo } from "@liveblocks/react"
+import {
+  useCanRedo,
+  useCanUndo,
+  useRedo,
+  useRoom,
+  useUndo,
+  useUpdateMyPresence,
+} from "@liveblocks/react"
 
 import { CanvasControls } from "@/components/editor/canvas/canvas-controls"
 import { CanvasEdgeRenderer } from "@/components/editor/canvas/canvas-edge"
 import { CanvasNodeRenderer } from "@/components/editor/canvas/canvas-node"
+import { LiveCursors } from "@/components/editor/canvas/live-cursors"
+import { PresenceAvatars } from "@/components/editor/canvas/presence-avatars"
 import { ShapeDragPreview } from "@/components/editor/canvas/shape-drag-preview"
 import { ShapePanel } from "@/components/editor/canvas/shape-panel"
+import { useCanvasAutosave, type SaveStatus } from "@/hooks/use-canvas-autosave"
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
+import type { CanvasTemplate } from "@/components/editor/starter-templates"
 import {
   CANVAS_SHAPE_DRAG_TYPE,
   DEFAULT_NODE_COLOR,
@@ -30,6 +41,15 @@ import {
   type CanvasShapeDragPayload,
 } from "@/types/canvas"
 
+export interface CanvasHandle {
+  importTemplate: (template: CanvasTemplate) => void
+}
+
+export interface CanvasProps {
+  projectId: string
+  onSaveStatusChange?: (status: SaveStatus) => void
+}
+
 const nodeTypes = { canvasNode: CanvasNodeRenderer }
 const edgeTypes = { canvasEdge: CanvasEdgeRenderer }
 
@@ -38,7 +58,10 @@ const defaultEdgeOptions = {
   markerEnd: { type: MarkerType.ArrowClosed, color: "var(--border-subtle)" },
 }
 
-function CanvasInner() {
+const CanvasInner = forwardRef<CanvasHandle, CanvasProps>(function CanvasInner(
+  { projectId, onSaveStatusChange },
+  ref
+) {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({
       suspense: true,
@@ -48,6 +71,62 @@ function CanvasInner() {
   const reactFlowInstance = useReactFlow<CanvasNode, CanvasEdge>()
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = reactFlowInstance
   const nodeCounterRef = useRef(0)
+  const updateMyPresence = useUpdateMyPresence()
+  const room = useRoom()
+
+  const saveStatus = useCanvasAutosave({ projectId, nodes, edges })
+  useEffect(() => {
+    onSaveStatusChange?.(saveStatus)
+  }, [saveStatus, onSaveStatusChange])
+
+  const [initialNodeCount] = useState(() => nodes.length)
+  const [initialEdgeCount] = useState(() => edges.length)
+  useEffect(() => {
+    if (initialNodeCount > 0 || initialEdgeCount > 0) return
+
+    let cancelled = false
+    async function loadSavedCanvas() {
+      try {
+        const response = await fetch(`/api/projects/${projectId}/canvas`)
+        if (!response.ok || cancelled) return
+
+        const saved = (await response.json()) as {
+          nodes?: CanvasNode[]
+          edges?: CanvasEdge[]
+        }
+        if (cancelled) return
+
+        const savedNodes = saved.nodes ?? []
+        const savedEdges = saved.edges ?? []
+        if (savedNodes.length > 0) {
+          onNodesChange(savedNodes.map((item) => ({ type: "add", item })))
+        }
+        if (savedEdges.length > 0) {
+          onEdgesChange(savedEdges.map((item) => ({ type: "add", item })))
+        }
+      } catch {
+        // Ignore load errors; user starts with an empty canvas.
+      }
+    }
+
+    loadSavedCanvas()
+    return () => {
+      cancelled = true
+    }
+  }, [projectId, initialNodeCount, initialEdgeCount, onNodesChange, onEdgesChange])
+
+  const handleCanvasMouseMove = useCallback(
+    (event: { clientX: number; clientY: number }) => {
+      updateMyPresence({
+        cursor: screenToFlowPosition({ x: event.clientX, y: event.clientY }),
+      })
+    },
+    [screenToFlowPosition, updateMyPresence]
+  )
+
+  const handleCanvasMouseLeave = useCallback(() => {
+    updateMyPresence({ cursor: null })
+  }, [updateMyPresence])
 
   const undo = useUndo()
   const redo = useRedo()
@@ -141,6 +220,51 @@ function CanvasInner() {
     [addNode, screenToFlowPosition]
   )
 
+  const importTemplate = useCallback(
+    (template: CanvasTemplate) => {
+      room.batch(() => {
+        const currentNodes = reactFlowInstance.getNodes()
+        const currentEdges = reactFlowInstance.getEdges()
+
+        if (currentNodes.length > 0) {
+          onNodesChange(currentNodes.map((existing) => ({ type: "remove", id: existing.id })))
+        }
+        if (currentEdges.length > 0) {
+          onEdgesChange(currentEdges.map((existing) => ({ type: "remove", id: existing.id })))
+        }
+
+        const newNodes: CanvasNode[] = template.nodes.map((templateNode) => ({
+          id: templateNode.id,
+          type: "canvasNode",
+          position: templateNode.position,
+          width: templateNode.width,
+          height: templateNode.height,
+          data: {
+            label: templateNode.label,
+            color: templateNode.color,
+            textColor: templateNode.textColor,
+            shape: templateNode.shape,
+          },
+        }))
+        const newEdges: CanvasEdge[] = template.edges.map((templateEdge) => ({
+          id: templateEdge.id,
+          type: "canvasEdge",
+          source: templateEdge.source,
+          target: templateEdge.target,
+          data: templateEdge.label ? { label: templateEdge.label } : {},
+        }))
+
+        onNodesChange(newNodes.map((item) => ({ type: "add", item })))
+        onEdgesChange(newEdges.map((item) => ({ type: "add", item })))
+      })
+
+      window.requestAnimationFrame(() => fitView({ duration: 200 }))
+    },
+    [room, reactFlowInstance, onNodesChange, onEdgesChange, fitView]
+  )
+
+  useImperativeHandle(ref, () => ({ importTemplate }), [importTemplate])
+
   return (
     <div className="relative h-full w-full" onDragOver={onDragOver} onDrop={onDrop}>
       <ReactFlow
@@ -153,6 +277,8 @@ function CanvasInner() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onDelete={onDelete}
+        onMouseMove={handleCanvasMouseMove}
+        onMouseLeave={handleCanvasMouseLeave}
         connectionMode={ConnectionMode.Loose}
         colorMode="dark"
         fitView
@@ -160,6 +286,8 @@ function CanvasInner() {
         <MiniMap />
         <Background variant={BackgroundVariant.Dots} />
       </ReactFlow>
+      <LiveCursors />
+      <PresenceAvatars />
       <CanvasControls
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
@@ -179,12 +307,12 @@ function CanvasInner() {
       )}
     </div>
   )
-}
+})
 
-export function Canvas() {
+export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(props, ref) {
   return (
     <ReactFlowProvider>
-      <CanvasInner />
+      <CanvasInner ref={ref} {...props} />
     </ReactFlowProvider>
   )
-}
+})

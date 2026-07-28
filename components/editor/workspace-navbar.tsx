@@ -1,9 +1,11 @@
 "use client"
 
-import { PanelLeftClose, PanelLeftOpen, Share2, Sparkles } from "lucide-react"
+import { LayoutTemplate, PanelLeftClose, PanelLeftOpen, Share2, Sparkles } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 
+import { SaveStatusIndicator } from "@/components/editor/canvas/save-status-indicator"
 import { Button } from "@/components/ui/button"
+import type { SaveStatus } from "@/hooks/use-canvas-autosave"
 
 interface WorkspaceNavbarProps {
   projectName: string
@@ -12,6 +14,8 @@ interface WorkspaceNavbarProps {
   isAiSidebarOpen: boolean
   onToggleAiSidebar: () => void
   onOpenShare: () => void
+  onOpenTemplates: () => void
+  saveStatus: SaveStatus
 }
 
 export function WorkspaceNavbar({
@@ -21,6 +25,8 @@ export function WorkspaceNavbar({
   isAiSidebarOpen,
   onToggleAiSidebar,
   onOpenShare,
+  onOpenTemplates,
+  saveStatus,
 }: WorkspaceNavbarProps) {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-surface-border bg-surface px-4">
@@ -41,6 +47,11 @@ export function WorkspaceNavbar({
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <SaveStatusIndicator status={saveStatus} />
+        <Button variant="outline" size="sm" onClick={onOpenTemplates}>
+          <LayoutTemplate />
+          Templates
+        </Button>
         <Button variant="outline" size="sm" onClick={onOpenShare}>
           <Share2 />
           Share
