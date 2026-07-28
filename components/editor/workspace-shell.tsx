@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Bot, Compass, Sparkles } from "lucide-react"
+import { Bot, Sparkles } from "lucide-react"
 
 import { WorkspaceNavbar } from "@/components/editor/workspace-navbar"
 import { ProjectSidebar } from "@/components/editor/project-sidebar"
 import { ProjectDialogs } from "@/components/editor/project-dialogs"
 import { ShareDialog } from "@/components/editor/share-dialog"
+import { CanvasRoom } from "@/components/editor/canvas/canvas-room"
 import { ProjectActionsProvider } from "@/hooks/use-project-actions"
 import { cn } from "@/lib/utils"
 import type { ProjectSummary } from "@/lib/projects"
@@ -50,29 +51,8 @@ export function WorkspaceShell({
             activeProjectId={projectId}
           />
 
-          <main className="relative flex flex-1 items-center justify-center overflow-hidden bg-base text-center">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(to_right,var(--border-subtle)_1px,transparent_1px),linear-gradient(to_bottom,var(--border-subtle)_1px,transparent_1px)] [background-size:40px_40px]"
-            />
-            <div className="relative flex max-w-md flex-col items-center gap-4 px-6">
-              <div className="flex size-14 items-center justify-center rounded-2xl border border-surface-border bg-surface text-brand">
-                <Compass className="size-6" />
-              </div>
-              <div className="flex flex-col gap-3">
-                <span className="text-xs font-medium tracking-widest text-copy-muted uppercase">
-                  Workspace Shell
-                </span>
-                <h2 className="text-2xl font-semibold text-copy-primary">
-                  Canvas and collaboration tooling land here next.
-                </h2>
-                <p className="text-sm text-copy-muted">
-                  This room is ready for the shared architecture canvas,
-                  durable AI workflows, and real-time presence. For now, the
-                  shell is wired with project context and navigation only.
-                </p>
-              </div>
-            </div>
+          <main className="relative flex-1 overflow-hidden bg-base">
+            <CanvasRoom roomId={projectId} />
           </main>
 
           <aside
