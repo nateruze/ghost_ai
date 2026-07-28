@@ -13,11 +13,14 @@ import {
   useReactFlow,
 } from "@xyflow/react"
 import { useLiveblocksFlow } from "@liveblocks/react-flow"
+import { useCanRedo, useCanUndo, useRedo, useUndo } from "@liveblocks/react"
 
+import { CanvasControls } from "@/components/editor/canvas/canvas-controls"
 import { CanvasEdgeRenderer } from "@/components/editor/canvas/canvas-edge"
 import { CanvasNodeRenderer } from "@/components/editor/canvas/canvas-node"
 import { ShapeDragPreview } from "@/components/editor/canvas/shape-drag-preview"
 import { ShapePanel } from "@/components/editor/canvas/shape-panel"
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
 import {
   CANVAS_SHAPE_DRAG_TYPE,
   DEFAULT_NODE_COLOR,
@@ -42,8 +45,20 @@ function CanvasInner() {
       nodes: { initial: [] },
       edges: { initial: [] },
     })
-  const { screenToFlowPosition } = useReactFlow<CanvasNode, CanvasEdge>()
+  const reactFlowInstance = useReactFlow<CanvasNode, CanvasEdge>()
+  const { screenToFlowPosition, zoomIn, zoomOut, fitView } = reactFlowInstance
   const nodeCounterRef = useRef(0)
+
+  const undo = useUndo()
+  const redo = useRedo()
+  const canUndo = useCanUndo()
+  const canRedo = useCanRedo()
+
+  const handleZoomIn = useCallback(() => zoomIn({ duration: 200 }), [zoomIn])
+  const handleZoomOut = useCallback(() => zoomOut({ duration: 200 }), [zoomOut])
+  const handleFitView = useCallback(() => fitView({ duration: 200 }), [fitView])
+
+  useKeyboardShortcuts({ reactFlowInstance, onUndo: undo, onRedo: redo })
 
   const [dragPayload, setDragPayload] = useState<CanvasShapeDragPayload | null>(null)
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 })
@@ -145,6 +160,15 @@ function CanvasInner() {
         <MiniMap />
         <Background variant={BackgroundVariant.Dots} />
       </ReactFlow>
+      <CanvasControls
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onFitView={handleFitView}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+      />
       <ShapePanel
         onCreateShape={onCreateShape}
         onDragStart={handleShapeDragStart}
