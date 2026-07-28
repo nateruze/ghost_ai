@@ -94,6 +94,9 @@ export function ShareDialog({
       if (!response.ok) {
         throw new Error(data?.error ?? "Failed to invite collaborator")
       }
+      if (!data || typeof data.id !== "string" || typeof data.email !== "string") {
+        throw new Error("Received an invalid response while inviting")
+      }
 
       setCollaborators((current) => [...current, data as CollaboratorSummary])
       setEmail("")

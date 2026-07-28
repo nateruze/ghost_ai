@@ -1,8 +1,8 @@
-import { auth } from "@clerk/nextjs/server"
+import { auth, clerkClient } from "@clerk/nextjs/server"
 
 import { prisma } from "@/lib/prisma"
 import { getCurrentIdentity, hasProjectAccess } from "@/lib/project-access"
-import { listCollaborators } from "@/lib/collaborators"
+import { listCollaborators, type CollaboratorSummary } from "@/lib/collaborators"
 
 export async function GET(
   _request: Request,
@@ -61,8 +61,9 @@ export async function POST(
     )
   }
 
+  let collaborator
   try {
-    await prisma.projectCollaborator.create({
+    collaborator = await prisma.projectCollaborator.create({
       data: { projectId, email },
     })
   } catch (err) {
@@ -80,8 +81,20 @@ export async function POST(
     throw err
   }
 
-  const collaborators = await listCollaborators(projectId)
-  const created = collaborators.find((c) => c.email === email)
+  const client = await clerkClient()
+  const { data: users } = await client.users.getUserList({
+    emailAddress: [email],
+    limit: 1,
+  })
+  const user = users[0]
+  const created: CollaboratorSummary = {
+    id: collaborator.id,
+    email: collaborator.email,
+    name: user
+      ? [user.firstName, user.lastName].filter(Boolean).join(" ") || null
+      : null,
+    avatarUrl: user?.imageUrl ?? null,
+  }
 
   return Response.json(created, { status: 201 })
 }

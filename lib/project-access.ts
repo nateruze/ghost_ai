@@ -27,7 +27,7 @@ export async function hasProjectAccess(
   if (!identity.email) return false
 
   const collaborator = await prisma.projectCollaborator.findFirst({
-    where: { projectId: project.id, email: identity.email },
+    where: { projectId: project.id, email: identity.email.toLowerCase() },
   })
   return Boolean(collaborator)
 }

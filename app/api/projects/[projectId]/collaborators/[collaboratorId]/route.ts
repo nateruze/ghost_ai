@@ -1,6 +1,7 @@
-import { auth } from "@clerk/nextjs/server"
+import { auth, clerkClient } from "@clerk/nextjs/server"
 
 import { prisma } from "@/lib/prisma"
+import { getLiveblocksClient } from "@/lib/liveblocks"
 
 export async function DELETE(
   _request: Request,
@@ -32,6 +33,18 @@ export async function DELETE(
   }
 
   await prisma.projectCollaborator.delete({ where: { id: collaboratorId } })
+
+  const client = await clerkClient()
+  const { data: users } = await client.users.getUserList({
+    emailAddress: [collaborator.email],
+    limit: 1,
+  })
+  const removedUserId = users[0]?.id
+  if (removedUserId) {
+    await getLiveblocksClient()
+      .updateRoom(projectId, { usersAccesses: { [removedUserId]: null } })
+      .catch(() => {})
+  }
 
   return new Response(null, { status: 204 })
 }
