@@ -1,5 +1,6 @@
 "use client"
 
+import { forwardRef } from "react"
 import {
   ClientSideSuspense,
   LiveblocksProvider,
@@ -7,7 +8,8 @@ import {
 } from "@liveblocks/react/suspense"
 import { ErrorBoundary } from "react-error-boundary"
 
-import { Canvas } from "@/components/editor/canvas/canvas"
+import { Canvas, type CanvasHandle } from "@/components/editor/canvas/canvas"
+import type { SaveStatus } from "@/hooks/use-canvas-autosave"
 
 import "@xyflow/react/dist/style.css"
 import "@liveblocks/react-ui/styles.css"
@@ -15,14 +17,18 @@ import "@liveblocks/react-flow/styles.css"
 
 interface CanvasRoomProps {
   roomId: string
+  onSaveStatusChange?: (status: SaveStatus) => void
 }
 
-export function CanvasRoom({ roomId }: CanvasRoomProps) {
+export const CanvasRoom = forwardRef<CanvasHandle, CanvasRoomProps>(function CanvasRoom(
+  { roomId, onSaveStatusChange },
+  ref
+) {
   return (
     <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
       <RoomProvider
         id={roomId}
-        initialPresence={{ cursor: null, isThinking: false }}
+        initialPresence={{ cursor: null, thinking: false }}
       >
         <ErrorBoundary
           fallback={
@@ -38,10 +44,10 @@ export function CanvasRoom({ roomId }: CanvasRoomProps) {
               </div>
             }
           >
-            <Canvas />
+            <Canvas ref={ref} projectId={roomId} onSaveStatusChange={onSaveStatusChange} />
           </ClientSideSuspense>
         </ErrorBoundary>
       </RoomProvider>
     </LiveblocksProvider>
   )
-}
+})
