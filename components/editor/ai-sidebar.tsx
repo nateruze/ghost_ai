@@ -327,6 +327,7 @@ function SpecsTab({ projectId }: { projectId: string }) {
   const [runId, setRunId] = useState<string | null>(null)
   const [publicToken, setPublicToken] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -335,11 +336,17 @@ function SpecsTab({ projectId }: { projectId: string }) {
       setIsLoading(true)
       try {
         const response = await fetch(`/api/projects/${projectId}/specs`)
-        if (!response.ok) throw new Error("Request failed")
+        if (!response.ok) throw new Error(`Request failed (${response.status})`)
         const data = await response.json()
-        if (!cancelled) setSpecs(data)
-      } catch {
-        if (!cancelled) setSpecs([])
+        if (!cancelled) {
+          setSpecs(data)
+          setLoadError(null)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setSpecs([])
+          setLoadError(error instanceof Error ? error.message : "Request failed")
+        }
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -430,6 +437,13 @@ function SpecsTab({ projectId }: { projectId: string }) {
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center text-copy-muted">
           <Loader2 className="size-5 animate-spin" />
+        </div>
+      ) : loadError ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+          <FileText className="size-8 text-error" />
+          <p className="max-w-[220px] text-sm text-error">
+            Couldn&apos;t load specs: {loadError}
+          </p>
         </div>
       ) : specs.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
