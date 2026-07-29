@@ -12,28 +12,28 @@ export default async function WorkspacePage({
   params: Promise<{ roomId: string }>
 }) {
   const { roomId } = await params
-  const [identity, project] = await Promise.all([
-    getCurrentIdentity(),
-    prisma.project.findUnique({ where: { id: roomId } }),
-  ])
+  const identity = await getCurrentIdentity()
 
   if (!identity.userId) {
     redirect("/sign-in")
   }
 
+  const project = await prisma.project.findUnique({ where: { id: roomId } })
+
   if (!project) {
     return <AccessDenied />
   }
 
-  const [canAccess, ownedProjects, sharedProjects] = await Promise.all([
-    hasProjectAccess(project, identity),
-    getOwnedProjects(identity.userId),
-    getSharedProjects(identity.email),
-  ])
+  const canAccess = await hasProjectAccess(project, identity)
 
   if (!canAccess) {
     return <AccessDenied />
   }
+
+  const [ownedProjects, sharedProjects] = await Promise.all([
+    getOwnedProjects(identity.userId),
+    getSharedProjects(identity.email),
+  ])
 
   return (
     <WorkspaceShell

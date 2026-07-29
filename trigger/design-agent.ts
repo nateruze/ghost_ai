@@ -1,4 +1,5 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
+import { LiveblocksError } from "@liveblocks/node"
 import type { MutableFlow } from "@liveblocks/react-flow/node"
 import { mutateFlow } from "@liveblocks/react-flow/node"
 import { logger, task } from "@trigger.dev/sdk"
@@ -231,16 +232,20 @@ export const designAgent = task({
     }
     const client = getLiveblocksClient()
 
-    await client
-      .createFeed({ roomId, feedId: AI_STATUS_FEED_ID, metadata: {} })
-      .catch(() => {
-        // Feed already exists — safe to ignore, messages can still be added to it.
-      })
-    await client
-      .createFeed({ roomId, feedId: AI_CHAT_FEED_ID, metadata: {} })
-      .catch(() => {
-        // Feed already exists — safe to ignore, messages can still be added to it.
-      })
+    async function ensureFeed(feedId: string) {
+      try {
+        await client.createFeed({ roomId, feedId, metadata: {} })
+      } catch (error) {
+        if (error instanceof LiveblocksError && error.status === 409) {
+          // Feed already exists — safe to ignore, messages can still be added to it.
+          return
+        }
+        throw error
+      }
+    }
+
+    await ensureFeed(AI_STATUS_FEED_ID)
+    await ensureFeed(AI_CHAT_FEED_ID)
 
     async function publishStatus(status: AiStatus, message: string) {
       await client.createFeedMessage({
@@ -322,7 +327,12 @@ export const designAgent = task({
           (appliedCount > 0
             ? `Done! I've updated the canvas (${appliedCount} change${appliedCount === 1 ? "" : "s"}).`
             : "I didn't find any changes to make for that request.")
-      )
+      ).catch((error) => {
+        logger.error("design-agent: failed to publish chat reply after successful run", {
+          error,
+          roomId,
+        })
+      })
     } catch (error) {
       logger.error("design-agent failed", { error, roomId, promptLength: prompt.length })
       await publishStatus("error", "Architect AI couldn't finish that request. Please try again.")

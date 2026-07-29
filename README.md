@@ -54,7 +54,7 @@ System Architecture Builder is a real-time collaborative system design workspace
 1. Clone the repository and install dependencies:
 
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/nateruze/system_architecture_builder.git
    cd system_architecture_builder
    npm install
    ```
