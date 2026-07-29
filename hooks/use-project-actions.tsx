@@ -8,7 +8,7 @@ import {
 } from "react"
 import { useParams, useRouter } from "next/navigation"
 
-import { slugify } from "@/lib/utils"
+import { randomSuffix, slugify } from "@/lib/utils"
 import type { ProjectSummary } from "@/lib/projects"
 
 type DialogType = "create" | "rename" | "delete" | null
@@ -46,14 +46,19 @@ export function ProjectActionsProvider({
     null
   )
   const [name, setName] = useState("")
+  const [slugSuffix, setSlugSuffix] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const slug = useMemo(() => slugify(name), [name])
+  const slug = useMemo(() => {
+    const base = slugify(name)
+    return base ? `${base}-${slugSuffix}` : ""
+  }, [name, slugSuffix])
 
   function openCreateDialog() {
     setActiveProject(null)
     setName("")
+    setSlugSuffix(randomSuffix())
     setError(null)
     setDialogType("create")
   }

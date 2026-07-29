@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { memo, useCallback, useEffect, useState } from "react"
 import type { ChangeEvent, KeyboardEvent, MouseEvent } from "react"
 import { Handle, NodeResizer, Position, useReactFlow, type NodeProps } from "@xyflow/react"
 
@@ -8,17 +8,28 @@ import { NodeColorToolbar } from "@/components/editor/canvas/node-color-toolbar"
 import { ShapeVisual } from "@/components/editor/canvas/shape-visual"
 import { MIN_NODE_SIZE, type CanvasNode, type NodeColorPair } from "@/types/canvas"
 
-export function CanvasNodeRenderer({ id, data, selected }: NodeProps<CanvasNode>) {
+export const CanvasNodeRenderer = memo(function CanvasNodeRenderer({
+  id,
+  data,
+  selected,
+}: NodeProps<CanvasNode>) {
   const { updateNodeData } = useReactFlow()
   const [isEditing, setIsEditing] = useState(false)
+  const [draftLabel, setDraftLabel] = useState(data.label)
+
+  useEffect(() => {
+    if (!isEditing) setDraftLabel(data.label)
+  }, [data.label, isEditing])
 
   const handleDoubleClick = useCallback((event: MouseEvent<HTMLDivElement>) => {
     event.stopPropagation()
+    setDraftLabel(data.label)
     setIsEditing(true)
-  }, [])
+  }, [data.label])
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLTextAreaElement>) => {
+      setDraftLabel(event.target.value)
       updateNodeData(id, { label: event.target.value })
     },
     [id, updateNodeData]
@@ -77,7 +88,7 @@ export function CanvasNodeRenderer({ id, data, selected }: NodeProps<CanvasNode>
           <textarea
             autoFocus
             rows={1}
-            value={data.label}
+            value={draftLabel}
             onChange={handleChange}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
@@ -90,4 +101,4 @@ export function CanvasNodeRenderer({ id, data, selected }: NodeProps<CanvasNode>
       <Handle type="source" position={Position.Bottom} id="bottom" className={handleClassName} />
     </div>
   )
-}
+})

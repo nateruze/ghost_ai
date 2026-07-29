@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { memo, useCallback, useState } from "react"
 import type { ChangeEvent, KeyboardEvent, MouseEvent as ReactMouseEvent } from "react"
 import {
   BaseEdge,
@@ -12,7 +12,7 @@ import {
 
 import type { CanvasEdge } from "@/types/canvas"
 
-export function CanvasEdgeRenderer({
+export const CanvasEdgeRenderer = memo(function CanvasEdgeRenderer({
   id,
   data,
   selected,
@@ -125,4 +125,4 @@ export function CanvasEdgeRenderer({
       </EdgeLabelRenderer>
     </>
   )
-}
+})

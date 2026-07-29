@@ -13,7 +13,7 @@ import {
   type CanvasEdge,
   type CanvasNode,
 } from "@/types/canvas"
-import { AI_STATUS_FEED_ID, type AiStatus } from "@/types/tasks"
+import { AI_CHAT_FEED_ID, AI_STATUS_FEED_ID, type AiStatus } from "@/types/tasks"
 
 const AI_USER_ID = "architect-ai"
 const AI_COLOR = "#6457f9" // --accent-ai, see context/ui-context.md
@@ -236,12 +236,30 @@ export const designAgent = task({
       .catch(() => {
         // Feed already exists — safe to ignore, messages can still be added to it.
       })
+    await client
+      .createFeed({ roomId, feedId: AI_CHAT_FEED_ID, metadata: {} })
+      .catch(() => {
+        // Feed already exists — safe to ignore, messages can still be added to it.
+      })
 
     async function publishStatus(status: AiStatus, message: string) {
       await client.createFeedMessage({
         roomId,
         feedId: AI_STATUS_FEED_ID,
         data: { status, text: message },
+      })
+    }
+
+    async function publishChatReply(content: string) {
+      await client.createFeedMessage({
+        roomId,
+        feedId: AI_CHAT_FEED_ID,
+        data: {
+          sender: "Architect AI",
+          role: "assistant",
+          content,
+          timestamp: Date.now(),
+        },
       })
     }
 
@@ -259,6 +277,7 @@ export const designAgent = task({
     }
 
     let appliedCount = 0
+    let responseText = ""
 
     try {
       await publishStatus("start", "Architect AI is reading your prompt…")
@@ -279,13 +298,14 @@ export const designAgent = task({
           }
         })
 
-        await generateText({
+        const result = await generateText({
           model,
           system: SYSTEM_PROMPT,
           prompt: buildPrompt(prompt, currentGraph),
           tools,
           stopWhen: stepCountIs(20),
         })
+        responseText = result.text.trim()
 
         await Promise.all(applyPresenceUpdates)
       })
@@ -295,6 +315,13 @@ export const designAgent = task({
         appliedCount > 0
           ? `Architect AI updated the canvas (${appliedCount} change${appliedCount === 1 ? "" : "s"}).`
           : "Architect AI didn't find any changes to make."
+      )
+
+      await publishChatReply(
+        responseText ||
+          (appliedCount > 0
+            ? `Done! I've updated the canvas (${appliedCount} change${appliedCount === 1 ? "" : "s"}).`
+            : "I didn't find any changes to make for that request.")
       )
     } catch (error) {
       logger.error("design-agent failed", { error, roomId, promptLength: prompt.length })
