@@ -19,11 +19,13 @@ export default async function WorkspacePage({
   }
 
   const project = await prisma.project.findUnique({ where: { id: roomId } })
+
   if (!project) {
     return <AccessDenied />
   }
 
   const canAccess = await hasProjectAccess(project, identity)
+
   if (!canAccess) {
     return <AccessDenied />
   }

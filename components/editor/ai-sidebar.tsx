@@ -141,13 +141,13 @@ function ArchitectTab({ projectId }: { projectId: string }) {
     enabled: !!runId && !!publicToken,
     onComplete: async (completedRun, err) => {
       const succeeded = !err && completedRun.status === "COMPLETED"
-      await sendMessage({
-        sender: "Architect AI",
-        role: "assistant",
-        content: succeeded
-          ? "Done! I've updated the canvas based on your request."
-          : "Something went wrong while generating that design. Please try again.",
-      })
+      if (!succeeded) {
+        await sendMessage({
+          sender: "Architect AI",
+          role: "assistant",
+          content: "Something went wrong while generating that design. Please try again.",
+        })
+      }
       setRunId(null)
       setPublicToken(null)
     },
@@ -530,14 +530,14 @@ function SpecPreviewDialog({
 
   return (
     <Dialog open={!!specId} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[80vh] w-full max-w-2xl flex-col sm:max-w-2xl">
+      <DialogContent className="flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="truncate pr-8">
             {spec?.filename ?? "Loading spec..."}
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="min-h-0 flex-1">
+        <ScrollArea className="h-full min-h-0 flex-1 overflow-hidden">
           <div className="pr-4">
             {isLoading ? (
               <div className="flex items-center justify-center py-12 text-copy-muted">

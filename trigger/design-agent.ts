@@ -1,4 +1,5 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
+import { LiveblocksError } from "@liveblocks/node"
 import type { MutableFlow } from "@liveblocks/react-flow/node"
 import { mutateFlow } from "@liveblocks/react-flow/node"
 import { logger, task } from "@trigger.dev/sdk"
@@ -13,7 +14,7 @@ import {
   type CanvasEdge,
   type CanvasNode,
 } from "@/types/canvas"
-import { AI_STATUS_FEED_ID, type AiStatus } from "@/types/tasks"
+import { AI_CHAT_FEED_ID, AI_STATUS_FEED_ID, type AiStatus } from "@/types/tasks"
 
 const AI_USER_ID = "architect-ai"
 const AI_COLOR = "#6457f9" // --accent-ai, see context/ui-context.md
@@ -231,17 +232,39 @@ export const designAgent = task({
     }
     const client = getLiveblocksClient()
 
-    await client
-      .createFeed({ roomId, feedId: AI_STATUS_FEED_ID, metadata: {} })
-      .catch(() => {
-        // Feed already exists — safe to ignore, messages can still be added to it.
-      })
+    async function ensureFeed(feedId: string) {
+      try {
+        await client.createFeed({ roomId, feedId, metadata: {} })
+      } catch (error) {
+        if (error instanceof LiveblocksError && error.status === 409) {
+          // Feed already exists — safe to ignore, messages can still be added to it.
+          return
+        }
+        throw error
+      }
+    }
+
+    await ensureFeed(AI_STATUS_FEED_ID)
+    await ensureFeed(AI_CHAT_FEED_ID)
 
     async function publishStatus(status: AiStatus, message: string) {
       await client.createFeedMessage({
         roomId,
         feedId: AI_STATUS_FEED_ID,
         data: { status, text: message },
+      })
+    }
+
+    async function publishChatReply(content: string) {
+      await client.createFeedMessage({
+        roomId,
+        feedId: AI_CHAT_FEED_ID,
+        data: {
+          sender: "Architect AI",
+          role: "assistant",
+          content,
+          timestamp: Date.now(),
+        },
       })
     }
 
@@ -259,6 +282,7 @@ export const designAgent = task({
     }
 
     let appliedCount = 0
+    let responseText = ""
 
     try {
       await publishStatus("start", "Architect AI is reading your prompt…")
@@ -279,13 +303,14 @@ export const designAgent = task({
           }
         })
 
-        await generateText({
+        const result = await generateText({
           model,
           system: SYSTEM_PROMPT,
           prompt: buildPrompt(prompt, currentGraph),
           tools,
           stopWhen: stepCountIs(20),
         })
+        responseText = result.text.trim()
 
         await Promise.all(applyPresenceUpdates)
       })
@@ -296,6 +321,18 @@ export const designAgent = task({
           ? `Architect AI updated the canvas (${appliedCount} change${appliedCount === 1 ? "" : "s"}).`
           : "Architect AI didn't find any changes to make."
       )
+
+      await publishChatReply(
+        responseText ||
+          (appliedCount > 0
+            ? `Done! I've updated the canvas (${appliedCount} change${appliedCount === 1 ? "" : "s"}).`
+            : "I didn't find any changes to make for that request.")
+      ).catch((error) => {
+        logger.error("design-agent: failed to publish chat reply after successful run", {
+          error,
+          roomId,
+        })
+      })
     } catch (error) {
       logger.error("design-agent failed", { error, roomId, promptLength: prompt.length })
       await publishStatus("error", "Architect AI couldn't finish that request. Please try again.")
