@@ -1,3 +1,5 @@
+import type { AiChatFeedMessage, AiStatusFeedMessage } from "@/types/tasks"
+
 // Define Liveblocks types for your application
 // https://liveblocks.io/docs/api-reference/liveblocks-react#Typing-your-data
 declare global {
@@ -24,9 +26,12 @@ declare global {
     };
 
     // Custom events, for useBroadcastEvent, useEventListener
-    // Example has two events, using a union
-    // RoomEvent: { type: "PLAY" } | { type: "REACTION"; emoji: "🔥" };
     RoomEvent: Record<string, never>;
+
+    // Custom data for feed messages, for useFeedMessages, useCreateFeedMessage
+    // Two separate feeds share this union (types/tasks.ts): "ai-status-feed" holds
+    // AiStatusFeedMessage payloads, "ai-chat" holds AiChatFeedMessage payloads.
+    FeedMessageData: AiStatusFeedMessage | AiChatFeedMessage;
 
     // Custom metadata set on threads, for useThreads, useCreateThread, etc.
     // Example, attaching coordinates to a thread

@@ -7,7 +7,6 @@ import {
   BackgroundVariant,
   ConnectionMode,
   MarkerType,
-  MiniMap,
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
@@ -22,6 +21,7 @@ import {
   useUpdateMyPresence,
 } from "@liveblocks/react"
 
+import { AiStatusBanner } from "@/components/editor/canvas/ai-status-banner"
 import { CanvasControls } from "@/components/editor/canvas/canvas-controls"
 import { CanvasEdgeRenderer } from "@/components/editor/canvas/canvas-edge"
 import { CanvasNodeRenderer } from "@/components/editor/canvas/canvas-node"
@@ -283,11 +283,11 @@ const CanvasInner = forwardRef<CanvasHandle, CanvasProps>(function CanvasInner(
         colorMode="dark"
         fitView
       >
-        <MiniMap />
         <Background variant={BackgroundVariant.Dots} />
       </ReactFlow>
       <LiveCursors />
       <PresenceAvatars />
+      <AiStatusBanner />
       <CanvasControls
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
