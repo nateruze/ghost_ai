@@ -15,10 +15,10 @@ import {
 } from "@/types/canvas"
 import { AI_STATUS_FEED_ID, type AiStatus } from "@/types/tasks"
 
-const AI_USER_ID = "ghost-ai"
+const AI_USER_ID = "architect-ai"
 const AI_COLOR = "#6457f9" // --accent-ai, see context/ui-context.md
 
-const SYSTEM_PROMPT = `You are Ghost AI, a system design assistant that edits a shared collaborative canvas of nodes and edges representing a software architecture.
+const SYSTEM_PROMPT = `You are Architect AI, a system design assistant that edits a shared collaborative canvas of nodes and edges representing a software architecture.
 
 You make changes by calling the provided tools (addNode, moveNode, resizeNode, updateNodeData, deleteNode, addEdge, deleteEdge). Call as many tools as needed, in the order they should be applied. If the request doesn't require any change, don't call any tool.
 
@@ -220,7 +220,7 @@ export const designAgent = task({
       await client.setPresence(roomId, {
         userId: AI_USER_ID,
         data: { cursor, thinking },
-        userInfo: { name: "Ghost AI", avatar: "", color: AI_COLOR },
+        userInfo: { name: "Architect AI", avatar: "", color: AI_COLOR },
         ttl,
       })
     }
@@ -228,14 +228,14 @@ export const designAgent = task({
     let appliedCount = 0
 
     try {
-      await publishStatus("start", "Ghost AI is reading your prompt…")
+      await publishStatus("start", "Architect AI is reading your prompt…")
       await setAiPresence(true, null)
 
       const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY })
       const model = google("gemini-flash-latest")
 
       await mutateFlow<CanvasNode, CanvasEdge>({ client, roomId }, async (flow) => {
-        await publishStatus("processing", "Ghost AI is designing your system…")
+        await publishStatus("processing", "Architect AI is designing your system…")
 
         const currentGraph = flow.toJSON()
         const applyPresenceUpdates: Promise<unknown>[] = []
@@ -260,12 +260,12 @@ export const designAgent = task({
       await publishStatus(
         "complete",
         appliedCount > 0
-          ? `Ghost AI updated the canvas (${appliedCount} change${appliedCount === 1 ? "" : "s"}).`
-          : "Ghost AI didn't find any changes to make."
+          ? `Architect AI updated the canvas (${appliedCount} change${appliedCount === 1 ? "" : "s"}).`
+          : "Architect AI didn't find any changes to make."
       )
     } catch (error) {
       logger.error("design-agent failed", { error, prompt, roomId })
-      await publishStatus("error", "Ghost AI couldn't finish that request. Please try again.")
+      await publishStatus("error", "Architect AI couldn't finish that request. Please try again.")
       throw error
     } finally {
       await setAiPresence(false, null, 2)

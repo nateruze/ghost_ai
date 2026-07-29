@@ -64,7 +64,7 @@ export function AiSidebar({ projectId, isOpen, onClose }: AiSidebarProps) {
               AI Workspace
             </span>
             <span className="text-xs text-copy-muted">
-              Collaborate with Ghost AI
+              Collaborate with Architect AI
             </span>
           </div>
         </div>
@@ -142,7 +142,7 @@ function ArchitectTab({ projectId }: { projectId: string }) {
     onComplete: async (completedRun, err) => {
       const succeeded = !err && completedRun.status === "COMPLETED"
       await sendMessage({
-        sender: "Ghost AI",
+        sender: "Architect AI",
         role: "assistant",
         content: succeeded
           ? "Done! I've updated the canvas based on your request."
@@ -185,7 +185,7 @@ function ArchitectTab({ projectId }: { projectId: string }) {
         setPublicToken(data.publicToken)
       } catch {
         await sendMessage({
-          sender: "Ghost AI",
+          sender: "Architect AI",
           role: "assistant",
           content: "Couldn't start that request. Please try again.",
         })
@@ -212,7 +212,7 @@ function ArchitectTab({ projectId }: { projectId: string }) {
               <Bot className="size-5" />
             </div>
             <p className="max-w-[220px] text-sm text-copy-muted">
-              Describe the system you want to build and Ghost AI will help
+              Describe the system you want to build and Architect AI will help
               sketch it out.
             </p>
             <div className="flex flex-wrap justify-center gap-2">
@@ -258,7 +258,7 @@ function ArchitectTab({ projectId }: { projectId: string }) {
         <div className="flex shrink-0 items-center gap-2 border-t border-surface-border bg-accent-dim/40 px-4 py-2 text-xs font-medium text-brand">
           <Loader2 className="size-3.5 shrink-0 animate-spin" />
           <span className="truncate">
-            {latestStatus?.text ?? "Ghost AI is working…"}
+            {latestStatus?.text ?? "Architect AI is working…"}
           </span>
         </div>
       ) : null}
@@ -274,7 +274,7 @@ function ArchitectTab({ projectId }: { projectId: string }) {
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask Ghost AI to design something..."
+            placeholder="Ask Architect AI to design something..."
             disabled={isGenerating}
             className="min-h-[72px] max-h-[160px] resize-none"
           />

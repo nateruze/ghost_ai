@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl -s -X DELETE http://localhost:3000/api/nonexistent)"
+      "Bash(curl -s -X DELETE http://localhost:3000/api/nonexistent)",
+      "Bash(sed -i '' 's#/Users/nashiafairuz/Documents/coding_projects/ghost_ai#/Users/nashiafairuz/Documents/coding_projects/system_architecture_builder#g' .claude/settings.local.json && grep -n \"coding_projects\" .claude/settings.local.json)",
+      "Read(//Users/nashiafairuz/Documents/coding_projects/**)"
+    ],
+    "additionalDirectories": [
+      "/Users/nashiafairuz/Documents/coding_projects/system_architecture_builder/.claude"
     ]
   }
 }

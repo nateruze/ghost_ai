@@ -24,7 +24,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
       <div className="hidden w-1/2 flex-col border-r border-surface-border bg-elevated px-16 py-16 lg:flex">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-xl bg-brand" />
-          <span className="font-semibold text-copy-primary">Ghost AI</span>
+          <span className="font-semibold text-copy-primary">Architect AI</span>
         </div>
 
         <div className="flex flex-1 flex-col justify-center">
@@ -32,7 +32,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
             Design systems at the speed of thought.
           </h1>
           <p className="mt-4 max-w-md text-copy-secondary">
-            Describe your architecture in plain English. Ghost AI maps it to a
+            Describe your architecture in plain English. Architect AI maps it to a
             shared canvas your whole team can refine in real time.
           </p>
 
@@ -52,7 +52,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <p className="text-xs text-copy-faint">
-          © {new Date().getFullYear()} Ghost AI. All rights reserved.
+          © {new Date().getFullYear()} Architect AI. All rights reserved.
         </p>
       </div>
       <div className="flex w-full items-center justify-center bg-base px-6 py-12 lg:w-1/2">

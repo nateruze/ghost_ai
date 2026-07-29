@@ -7,7 +7,7 @@ import type { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { generateSpecPayloadSchema } from "@/types/tasks"
 
-const SYSTEM_PROMPT = `You are Ghost AI, a technical writer that turns a software architecture diagram (nodes and edges) and its design conversation into a clear, well-organized Markdown technical specification.
+const SYSTEM_PROMPT = `You are Architect AI, a technical writer that turns a software architecture diagram (nodes and edges) and its design conversation into a clear, well-organized Markdown technical specification.
 
 Write the spec in Markdown with sections such as: Overview, Architecture (describe each component and its shape/role), Data Flow (describe how components connect via the edges), and Key Decisions (drawn from the chat history, if relevant). Reference components by their labels, not their internal ids. Be concise but complete. Output only the Markdown document, with no surrounding commentary or code fences.`
 
