@@ -1,6 +1,6 @@
 "use client"
 
-import { MousePointer2 } from "lucide-react"
+import { Loader2, MousePointer2 } from "lucide-react"
 import { useOthers } from "@liveblocks/react"
 import { useReactFlow } from "@xyflow/react"
 
@@ -28,10 +28,13 @@ export function LiveCursors() {
               style={{ color, fill: color }}
             />
             <span
-              className="ml-3 -mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap text-white"
+              className="ml-3 -mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap text-white"
               style={{ backgroundColor: color }}
             >
               {name}
+              {other.presence.thinking ? (
+                <Loader2 className="size-3 shrink-0 animate-spin" aria-label="thinking" />
+              ) : null}
             </span>
           </div>
         )

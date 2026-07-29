@@ -1,4 +1,4 @@
-# Ghost AI — Learning Curriculum
+# System Architecture Builder — Learning Curriculum
 
 Personal learning log. Not read by the app — just for tracking what I've built and the concepts behind it. Add to this as the project grows.
 

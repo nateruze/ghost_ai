@@ -280,3 +280,61 @@
     }
 
 }
+
+.markdown-body {
+  line-height: 1.6;
+}
+.markdown-body > * + * {
+  margin-top: 0.75em;
+}
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.markdown-body h1 {
+  font-size: 1.25em;
+}
+.markdown-body h2 {
+  font-size: 1.125em;
+}
+.markdown-body h3 {
+  font-size: 1em;
+}
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.25em;
+}
+.markdown-body ul {
+  list-style: disc;
+}
+.markdown-body ol {
+  list-style: decimal;
+}
+.markdown-body code {
+  font-family: var(--font-geist-mono);
+  font-size: 0.9em;
+  background: var(--bg-subtle);
+  border-radius: 0.25em;
+  padding: 0.1em 0.35em;
+}
+.markdown-body pre {
+  background: var(--bg-subtle);
+  border-radius: 0.5em;
+  padding: 0.75em;
+  overflow-x: auto;
+}
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+}
+.markdown-body a {
+  color: var(--accent-primary);
+  text-decoration: underline;
+}
+.markdown-body blockquote {
+  border-left: 2px solid var(--border-default);
+  padding-left: 0.75em;
+  color: var(--text-secondary);
+}

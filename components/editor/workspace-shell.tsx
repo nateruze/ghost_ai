@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { LiveblocksProvider, RoomProvider } from "@liveblocks/react/suspense"
 
 import { AiSidebar } from "@/components/editor/ai-sidebar"
 import { WorkspaceNavbar } from "@/components/editor/workspace-navbar"
@@ -38,36 +39,41 @@ export function WorkspaceShell({
 
   return (
     <ProjectActionsProvider>
-      <div className="flex h-screen flex-col overflow-hidden bg-base">
-        <WorkspaceNavbar
-          projectName={projectName}
-          isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
-          isAiSidebarOpen={isAiSidebarOpen}
-          onToggleAiSidebar={() => setIsAiSidebarOpen((open) => !open)}
-          onOpenShare={() => setIsShareOpen(true)}
-          onOpenTemplates={() => setIsTemplatesOpen(true)}
-          saveStatus={saveStatus}
-        />
-        <div className="relative flex flex-1 overflow-hidden">
-          <ProjectSidebar
-            isOpen={isSidebarOpen}
-            onClose={() => setIsSidebarOpen(false)}
-            ownedProjects={ownedProjects}
-            sharedProjects={sharedProjects}
-            activeProjectId={projectId}
-          />
+      <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
+        <RoomProvider id={projectId} initialPresence={{ cursor: null, thinking: false }}>
+          <div className="flex h-screen flex-col overflow-hidden bg-base">
+            <WorkspaceNavbar
+              projectName={projectName}
+              isSidebarOpen={isSidebarOpen}
+              onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
+              isAiSidebarOpen={isAiSidebarOpen}
+              onToggleAiSidebar={() => setIsAiSidebarOpen((open) => !open)}
+              onOpenShare={() => setIsShareOpen(true)}
+              onOpenTemplates={() => setIsTemplatesOpen(true)}
+              saveStatus={saveStatus}
+            />
+            <div className="relative flex flex-1 overflow-hidden">
+              <ProjectSidebar
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+                ownedProjects={ownedProjects}
+                sharedProjects={sharedProjects}
+                activeProjectId={projectId}
+              />
 
-          <main className="relative flex-1 overflow-hidden bg-base">
-            <CanvasRoom ref={canvasRef} roomId={projectId} onSaveStatusChange={setSaveStatus} />
-          </main>
+              <main className="relative flex-1 overflow-hidden bg-base">
+                <CanvasRoom ref={canvasRef} projectId={projectId} onSaveStatusChange={setSaveStatus} />
+              </main>
 
-          <AiSidebar
-            isOpen={isAiSidebarOpen}
-            onClose={() => setIsAiSidebarOpen(false)}
-          />
-        </div>
-      </div>
+              <AiSidebar
+                projectId={projectId}
+                isOpen={isAiSidebarOpen}
+                onClose={() => setIsAiSidebarOpen(false)}
+              />
+            </div>
+          </div>
+        </RoomProvider>
+      </LiveblocksProvider>
       <ProjectDialogs />
       <ShareDialog
         projectId={projectId}

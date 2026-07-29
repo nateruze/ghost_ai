@@ -1,0 +1,78 @@
+import { z } from "zod"
+
+export const AI_STATUS_FEED_ID = "ai-status-feed"
+
+export const AI_STATUS_VALUES = ["start", "processing", "complete", "error"] as const
+export type AiStatus = (typeof AI_STATUS_VALUES)[number]
+
+export const aiStatusFeedMessageSchema = z.object({
+  status: z.enum(AI_STATUS_VALUES),
+  text: z.string(),
+})
+
+export type AiStatusFeedMessage = z.infer<typeof aiStatusFeedMessageSchema>
+
+export function parseAiStatusFeedMessage(data: unknown): AiStatusFeedMessage | null {
+  const result = aiStatusFeedMessageSchema.safeParse(data)
+  return result.success ? result.data : null
+}
+
+export const AI_CHAT_FEED_ID = "ai-chat"
+
+export const AI_CHAT_ROLES = ["user", "assistant"] as const
+export type AiChatRole = (typeof AI_CHAT_ROLES)[number]
+
+export const aiChatFeedMessageSchema = z.object({
+  sender: z.string(),
+  role: z.enum(AI_CHAT_ROLES),
+  content: z.string(),
+  timestamp: z.number(),
+})
+
+export type AiChatFeedMessage = z.infer<typeof aiChatFeedMessageSchema>
+
+export function parseAiChatFeedMessage(data: unknown): AiChatFeedMessage | null {
+  const result = aiChatFeedMessageSchema.safeParse(data)
+  return result.success ? result.data : null
+}
+
+export const specChatMessageSchema = z.object({
+  sender: z.string().max(200),
+  role: z.enum(AI_CHAT_ROLES),
+  content: z.string().max(10_000),
+  timestamp: z.number(),
+})
+
+export const specCanvasNodeSchema = z
+  .object({
+    id: z.string(),
+    position: z.object({ x: z.number(), y: z.number() }),
+    data: z
+      .object({
+        label: z.string().max(500),
+        color: z.string().optional(),
+        textColor: z.string().optional(),
+        shape: z.string().optional(),
+      })
+      .passthrough(),
+  })
+  .passthrough()
+
+export const specCanvasEdgeSchema = z
+  .object({
+    id: z.string(),
+    source: z.string(),
+    target: z.string(),
+    data: z.object({ label: z.string().max(500).optional() }).passthrough().optional(),
+  })
+  .passthrough()
+
+export const generateSpecPayloadSchema = z.object({
+  projectId: z.string(),
+  roomId: z.string(),
+  chatHistory: z.array(specChatMessageSchema).max(500),
+  nodes: z.array(specCanvasNodeSchema).max(500),
+  edges: z.array(specCanvasEdgeSchema).max(1000),
+})
+
+export type GenerateSpecPayload = z.infer<typeof generateSpecPayloadSchema>
