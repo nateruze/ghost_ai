@@ -5,25 +5,19 @@ import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
 
 import { useLatestAiStatus } from "@/hooks/use-ai-status-feed"
 import { cn } from "@/lib/utils"
-import type { AiStatusFeedMessage } from "@/types/tasks"
 
 export function AiStatusBanner() {
   const latest = useLatestAiStatus()
-  const [dismissed, setDismissed] = useState<AiStatusFeedMessage | null>(null)
+  const [dismissedId, setDismissedId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!latest || latest.status === "start" || latest.status === "processing") return
 
-    const timer = setTimeout(() => setDismissed(latest), 4000)
+    const timer = setTimeout(() => setDismissedId(latest.id), 4000)
     return () => clearTimeout(timer)
   }, [latest])
 
-  const isDismissed =
-    latest !== null &&
-    dismissed !== null &&
-    dismissed.status === latest.status &&
-    dismissed.text === latest.text
-  const current = isDismissed ? null : latest
+  const current = latest && latest.id !== dismissedId ? latest : null
 
   if (!current) return null
 

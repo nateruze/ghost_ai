@@ -2,6 +2,7 @@
   "mcpServers": {
     "trigger": {
       "args": [
+        "-y",
         "trigger.dev@4.5.8",
         "mcp"
       ],

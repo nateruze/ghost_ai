@@ -7,7 +7,7 @@ export type AiStatus = (typeof AI_STATUS_VALUES)[number]
 
 export const aiStatusFeedMessageSchema = z.object({
   status: z.enum(AI_STATUS_VALUES),
-  text: z.string().optional(),
+  text: z.string(),
 })
 
 export type AiStatusFeedMessage = z.infer<typeof aiStatusFeedMessageSchema>
@@ -37,9 +37,9 @@ export function parseAiChatFeedMessage(data: unknown): AiChatFeedMessage | null 
 }
 
 export const specChatMessageSchema = z.object({
-  sender: z.string(),
+  sender: z.string().max(200),
   role: z.enum(AI_CHAT_ROLES),
-  content: z.string(),
+  content: z.string().max(10_000),
   timestamp: z.number(),
 })
 
@@ -49,7 +49,7 @@ export const specCanvasNodeSchema = z
     position: z.object({ x: z.number(), y: z.number() }),
     data: z
       .object({
-        label: z.string(),
+        label: z.string().max(500),
         color: z.string().optional(),
         textColor: z.string().optional(),
         shape: z.string().optional(),
@@ -63,16 +63,16 @@ export const specCanvasEdgeSchema = z
     id: z.string(),
     source: z.string(),
     target: z.string(),
-    data: z.object({ label: z.string().optional() }).passthrough().optional(),
+    data: z.object({ label: z.string().max(500).optional() }).passthrough().optional(),
   })
   .passthrough()
 
 export const generateSpecPayloadSchema = z.object({
   projectId: z.string(),
   roomId: z.string(),
-  chatHistory: z.array(specChatMessageSchema),
-  nodes: z.array(specCanvasNodeSchema),
-  edges: z.array(specCanvasEdgeSchema),
+  chatHistory: z.array(specChatMessageSchema).max(500),
+  nodes: z.array(specCanvasNodeSchema).max(500),
+  edges: z.array(specCanvasEdgeSchema).max(1000),
 })
 
 export type GenerateSpecPayload = z.infer<typeof generateSpecPayloadSchema>

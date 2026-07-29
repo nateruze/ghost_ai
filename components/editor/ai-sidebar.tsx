@@ -180,7 +180,8 @@ function ArchitectTab({ projectId }: { projectId: string }) {
         })
         if (!response.ok) throw new Error("Request failed")
 
-        const data = await response.json()
+        const data = (await response.json()) as { runId?: string; publicToken?: string }
+        if (!data.runId || !data.publicToken) throw new Error("Invalid response")
         setRunId(data.runId)
         setPublicToken(data.publicToken)
       } catch {
@@ -386,7 +387,9 @@ function SpecsTab({ projectId }: { projectId: string }) {
         }),
       })
       if (!specResponse.ok) throw new Error("Request failed")
-      const { runId: newRunId } = await specResponse.json()
+      const specData = (await specResponse.json()) as { runId?: string }
+      if (!specData.runId) throw new Error("Invalid response")
+      const newRunId = specData.runId
 
       const tokenResponse = await fetch("/api/ai/spec/token", {
         method: "POST",
@@ -394,7 +397,9 @@ function SpecsTab({ projectId }: { projectId: string }) {
         body: JSON.stringify({ runId: newRunId }),
       })
       if (!tokenResponse.ok) throw new Error("Request failed")
-      const { token } = await tokenResponse.json()
+      const tokenData = (await tokenResponse.json()) as { token?: string }
+      if (!tokenData.token) throw new Error("Invalid response")
+      const token = tokenData.token
 
       setRunId(newRunId)
       setPublicToken(token)
@@ -437,35 +442,36 @@ function SpecsTab({ projectId }: { projectId: string }) {
         <ScrollArea className="min-h-0 flex-1">
           <div className="flex flex-col gap-2 pr-2">
             {specs.map((spec) => (
-              <button
+              <div
                 key={spec.id}
-                type="button"
-                onClick={() => setSelectedSpecId(spec.id)}
                 className="flex items-start gap-3 rounded-xl border border-surface-border bg-elevated p-4 text-left transition-colors hover:border-border-subtle hover:bg-subtle"
               >
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent-dim text-brand">
-                  <FileText className="size-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-copy-primary">
-                    {spec.filename}
-                  </p>
-                  <p className="mt-1 text-xs text-copy-muted">
-                    {formatSpecDate(spec.createdAt)}
-                  </p>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSpecId(spec.id)}
+                  className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                >
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent-dim text-brand">
+                    <FileText className="size-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-copy-primary">
+                      {spec.filename}
+                    </p>
+                    <p className="mt-1 text-xs text-copy-muted">
+                      {formatSpecDate(spec.createdAt)}
+                    </p>
+                  </div>
+                </button>
                 <Button
                   variant="ghost"
                   size="icon-sm"
                   aria-label="Download spec"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    downloadSpec(projectId, spec.id)
-                  }}
+                  onClick={() => downloadSpec(projectId, spec.id)}
                 >
                   <Download />
                 </Button>
-              </button>
+              </div>
             ))}
           </div>
         </ScrollArea>

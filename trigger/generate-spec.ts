@@ -57,20 +57,17 @@ export const generateSpec = schemaTask({
         prompt: buildPrompt(payload),
       })
 
-      const projectSpec = await prisma.projectSpec.create({
-        data: { projectId: payload.projectId, filePath: "" },
-      })
+      const specId = crypto.randomUUID()
 
-      const blob = await put(`specs/${payload.projectId}/${projectSpec.id}.md`, text, {
+      const blob = await put(`specs/${payload.projectId}/${specId}.md`, text, {
         access: "private",
         contentType: "text/markdown",
         addRandomSuffix: false,
         allowOverwrite: true,
       })
 
-      await prisma.projectSpec.update({
-        where: { id: projectSpec.id },
-        data: { filePath: blob.url },
+      const projectSpec = await prisma.projectSpec.create({
+        data: { id: specId, projectId: payload.projectId, filePath: blob.url },
       })
 
       metadata.set("status", "complete")

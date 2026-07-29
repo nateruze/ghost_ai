@@ -1,4 +1,4 @@
-import { auth, tasks } from "@trigger.dev/sdk"
+import { auth, runs, tasks } from "@trigger.dev/sdk"
 
 import { prisma } from "@/lib/prisma"
 import { getCurrentIdentity, hasProjectAccess } from "@/lib/project-access"
@@ -23,6 +23,10 @@ export async function POST(request: Request) {
 
   const { prompt, roomId, projectId } = body
 
+  if (roomId !== projectId) {
+    return Response.json({ error: "Invalid request" }, { status: 400 })
+  }
+
   const project = await prisma.project.findUnique({ where: { id: projectId } })
   if (!project) {
     return Response.json({ error: "Not found" }, { status: 404 })
@@ -37,13 +41,18 @@ export async function POST(request: Request) {
     roomId,
   })
 
-  await prisma.taskRun.create({
-    data: {
-      runId: handle.id,
-      projectId,
-      userId: identity.userId,
-    },
-  })
+  try {
+    await prisma.taskRun.create({
+      data: {
+        runId: handle.id,
+        projectId,
+        userId: identity.userId,
+      },
+    })
+  } catch (error) {
+    await runs.cancel(handle.id).catch(() => {})
+    throw error
+  }
 
   const publicToken = await auth.createPublicToken({
     scopes: { read: { runs: [handle.id] } },

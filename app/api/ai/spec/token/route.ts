@@ -1,7 +1,7 @@
 import { auth } from "@trigger.dev/sdk"
 
 import { prisma } from "@/lib/prisma"
-import { getCurrentIdentity } from "@/lib/project-access"
+import { getCurrentIdentity, hasProjectAccess } from "@/lib/project-access"
 
 export async function POST(request: Request) {
   const identity = await getCurrentIdentity()
@@ -22,6 +22,11 @@ export async function POST(request: Request) {
   }
 
   if (taskRun.userId !== identity.userId) {
+    return Response.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  const project = await prisma.project.findUnique({ where: { id: taskRun.projectId } })
+  if (!project || !(await hasProjectAccess(project, identity))) {
     return Response.json({ error: "Forbidden" }, { status: 403 })
   }
 

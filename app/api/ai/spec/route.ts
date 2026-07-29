@@ -1,4 +1,4 @@
-import { tasks } from "@trigger.dev/sdk"
+import { runs, tasks } from "@trigger.dev/sdk"
 import { z } from "zod"
 
 import { prisma } from "@/lib/prisma"
@@ -8,9 +8,9 @@ import { specCanvasEdgeSchema, specCanvasNodeSchema, specChatMessageSchema } fro
 
 const requestSchema = z.object({
   roomId: z.string(),
-  chatHistory: z.array(specChatMessageSchema),
-  nodes: z.array(specCanvasNodeSchema),
-  edges: z.array(specCanvasEdgeSchema),
+  chatHistory: z.array(specChatMessageSchema).max(500),
+  nodes: z.array(specCanvasNodeSchema).max(500),
+  edges: z.array(specCanvasEdgeSchema).max(1000),
 })
 
 export async function POST(request: Request) {
@@ -44,13 +44,18 @@ export async function POST(request: Request) {
     edges,
   })
 
-  await prisma.taskRun.create({
-    data: {
-      runId: handle.id,
-      projectId: project.id,
-      userId: identity.userId,
-    },
-  })
+  try {
+    await prisma.taskRun.create({
+      data: {
+        runId: handle.id,
+        projectId: project.id,
+        userId: identity.userId,
+      },
+    })
+  } catch (error) {
+    await runs.cancel(handle.id).catch(() => {})
+    throw error
+  }
 
   return Response.json({ runId: handle.id })
 }

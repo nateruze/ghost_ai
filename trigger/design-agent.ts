@@ -61,10 +61,18 @@ ${JSON.stringify({ nodes: nodesSummary, edges: edgesSummary }, null, 2)}
 User request: ${userPrompt}`
 }
 
+const KEBAB_CASE_ID = /^[a-z0-9]+(-[a-z0-9]+)*$/
+
 function buildTools(
   flow: MutableFlow<CanvasNode, CanvasEdge>,
+  currentGraph: { nodes: readonly CanvasNode[]; edges: readonly CanvasEdge[] },
   onApplied: (position?: { x: number; y: number }) => void
 ) {
+  const nodeIds = new Set(currentGraph.nodes.map((node) => node.id))
+  const edges = new Map(
+    currentGraph.edges.map((edge) => [edge.id, { source: edge.source, target: edge.target }])
+  )
+
   return {
     addNode: tool({
       description: "Add a new node to the canvas.",
@@ -77,6 +85,9 @@ function buildTools(
         y: z.number(),
       }),
       execute: async ({ id, shape, label, colorIndex, x, y }) => {
+        if (!KEBAB_CASE_ID.test(id)) return { ok: false, error: `Invalid id "${id}": must be kebab-case.` }
+        if (nodeIds.has(id)) return { ok: false, error: `Node id "${id}" already exists.` }
+
         const size = SHAPE_DEFAULT_SIZES[shape]
         const pair = NODE_COLORS[colorIndex]!
         flow.addNode({
@@ -92,6 +103,7 @@ function buildTools(
             shape,
           },
         })
+        nodeIds.add(id)
         onApplied({ x, y })
         return { ok: true }
       },
@@ -104,6 +116,8 @@ function buildTools(
         y: z.number(),
       }),
       execute: async ({ id, x, y }) => {
+        if (!nodeIds.has(id)) return { ok: false, error: `Node id "${id}" does not exist.` }
+
         flow.updateNode(id, (node) => ({ ...node, position: { x, y } }))
         onApplied({ x, y })
         return { ok: true }
@@ -117,6 +131,8 @@ function buildTools(
         height: z.number().positive(),
       }),
       execute: async ({ id, width, height }) => {
+        if (!nodeIds.has(id)) return { ok: false, error: `Node id "${id}" does not exist.` }
+
         flow.updateNode(id, (node) => ({ ...node, width, height }))
         onApplied()
         return { ok: true }
@@ -130,6 +146,8 @@ function buildTools(
         colorIndex: z.number().int().min(0).max(NODE_COLORS.length - 1).optional(),
       }),
       execute: async ({ id, label, colorIndex }) => {
+        if (!nodeIds.has(id)) return { ok: false, error: `Node id "${id}" does not exist.` }
+
         flow.updateNodeData(id, (data) => {
           const pair = colorIndex !== undefined ? NODE_COLORS[colorIndex] : undefined
           return {
@@ -148,7 +166,13 @@ function buildTools(
         id: z.string().describe("Id of the existing node to delete."),
       }),
       execute: async ({ id }) => {
+        if (!nodeIds.has(id)) return { ok: false, error: `Node id "${id}" does not exist.` }
+
         flow.removeNode(id)
+        nodeIds.delete(id)
+        for (const [edgeId, edge] of edges) {
+          if (edge.source === id || edge.target === id) edges.delete(edgeId)
+        }
         onApplied()
         return { ok: true }
       },
@@ -162,6 +186,11 @@ function buildTools(
         label: z.string().optional(),
       }),
       execute: async ({ id, source, target, label }) => {
+        if (!KEBAB_CASE_ID.test(id)) return { ok: false, error: `Invalid id "${id}": must be kebab-case.` }
+        if (edges.has(id)) return { ok: false, error: `Edge id "${id}" already exists.` }
+        if (!nodeIds.has(source)) return { ok: false, error: `Source node "${source}" does not exist.` }
+        if (!nodeIds.has(target)) return { ok: false, error: `Target node "${target}" does not exist.` }
+
         flow.addEdge({
           id,
           type: "canvasEdge",
@@ -169,6 +198,7 @@ function buildTools(
           target,
           data: label ? { label } : {},
         })
+        edges.set(id, { source, target })
         onApplied()
         return { ok: true }
       },
@@ -179,7 +209,10 @@ function buildTools(
         id: z.string().describe("Id of the existing edge to delete."),
       }),
       execute: async ({ id }) => {
+        if (!edges.has(id)) return { ok: false, error: `Edge id "${id}" does not exist.` }
+
         flow.removeEdge(id)
+        edges.delete(id)
         onApplied()
         return { ok: true }
       },
@@ -239,7 +272,7 @@ export const designAgent = task({
 
         const currentGraph = flow.toJSON()
         const applyPresenceUpdates: Promise<unknown>[] = []
-        const tools = buildTools(flow, (position) => {
+        const tools = buildTools(flow, currentGraph, (position) => {
           appliedCount++
           if (position) {
             applyPresenceUpdates.push(setAiPresence(true, position))
@@ -264,7 +297,7 @@ export const designAgent = task({
           : "Architect AI didn't find any changes to make."
       )
     } catch (error) {
-      logger.error("design-agent failed", { error, prompt, roomId })
+      logger.error("design-agent failed", { error, roomId, promptLength: prompt.length })
       await publishStatus("error", "Architect AI couldn't finish that request. Please try again.")
       throw error
     } finally {
